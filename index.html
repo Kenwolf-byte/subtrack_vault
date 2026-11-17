@@ -1,0 +1,3485 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f0e" />
+  <title>SubTrack Vault — Offline Subscription & Account Tracker</title>
+
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS & MATERIAL YOU THEME SYSTEM (100% OFFLINE / ZERO CDN)
+       ========================================================================== */
+    :root {
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+      /* Light Theme Palette */
+      --bg-app: #f2f6f4;
+      --bg-header: rgba(242, 246, 244, 0.88);
+      --bg-card: #ffffff;
+      --bg-elevated: #e8efec;
+      --bg-input: #f7faf8;
+      --border-subtle: #dce5e0;
+      --border-strong: #c4d3cc;
+
+      --text-primary: #0f1715;
+      --text-secondary: #475852;
+      --text-muted: #6f827b;
+
+      --accent-primary: #059669;
+      --accent-primary-hover: #047857;
+      --accent-primary-soft: rgba(5, 150, 105, 0.12);
+      --accent-primary-text: #065f46;
+      --accent-on-primary: #ffffff;
+
+      --accent-indigo: #4f46e5;
+      --accent-indigo-soft: rgba(79, 70, 229, 0.12);
+
+      --status-danger: #e11d48;
+      --status-danger-soft: rgba(225, 29, 72, 0.12);
+      --status-warning: #d97706;
+      --status-warning-soft: rgba(217, 119, 6, 0.14);
+      --status-info: #0284c7;
+      --status-info-soft: rgba(2, 132, 199, 0.12);
+
+      --shadow-sm: 0 2px 8px rgba(15, 23, 21, 0.04);
+      --shadow-md: 0 8px 24px rgba(15, 23, 21, 0.08);
+      --shadow-fab: 0 10px 28px rgba(5, 150, 105, 0.32);
+
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+    }
+
+    html.dark {
+      --bg-app: #0b0f0e;
+      --bg-header: rgba(11, 15, 14, 0.88);
+      --bg-card: #131a18;
+      --bg-elevated: #1b2522;
+      --bg-input: #17201d;
+      --border-subtle: #222f2b;
+      --border-strong: #2f403b;
+
+      --text-primary: #f1f6f4;
+      --text-secondary: #a3b5ae;
+      --text-muted: #6e827b;
+
+      --accent-primary: #10b981;
+      --accent-primary-hover: #34d399;
+      --accent-primary-soft: rgba(16, 185, 129, 0.15);
+      --accent-primary-text: #6ee7b7;
+      --accent-on-primary: #042117;
+
+      --accent-indigo: #818cf8;
+      --accent-indigo-soft: rgba(129, 140, 248, 0.16);
+
+      --status-danger: #fb7185;
+      --status-danger-soft: rgba(244, 63, 94, 0.16);
+      --status-warning: #fbbf24;
+      --status-warning-soft: rgba(245, 158, 11, 0.16);
+      --status-info: #38bdf8;
+      --status-info-soft: rgba(14, 165, 233, 0.16);
+
+      --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.25);
+      --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45);
+      --shadow-fab: 0 10px 28px rgba(16, 185, 129, 0.28);
+    }
+
+    /* ==========================================================================
+       2. RESET & BASE LAYOUT
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      min-height: 100%;
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      color: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      background: none;
+      touch-action: manipulation;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .icon-svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    .icon-sm { width: 15px; height: 15px; }
+    .icon-lg { width: 22px; height: 22px; }
+
+    /* ==========================================================================
+       3. HEADER & SAFE-AREA APK SUPPORT
+       ========================================================================== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--bg-header);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding-top: calc(10px + var(--safe-top));
+      padding-bottom: 10px;
+      padding-left: calc(16px + var(--safe-left));
+      padding-right: calc(16px + var(--safe-right));
+    }
+
+    .header-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent-primary), #0d9488);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+      flex-shrink: 0;
+    }
+
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-title {
+      font-size: 1.12rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .offline-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-primary-soft);
+      color: var(--accent-primary-text);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .offline-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .icon-btn {
+      min-width: 42px;
+      min-height: 42px;
+      padding: 0 10px;
+      border-radius: 13px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.12s ease;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--accent-primary);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.96);
+    }
+
+    .currency-select {
+      min-height: 42px;
+      padding: 0 10px;
+      border-radius: 13px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .currency-select:focus {
+      outline: 2px solid var(--accent-primary);
+      outline-offset: 1px;
+    }
+
+    /* ==========================================================================
+       4. MAIN CONTAINER & CARDS
+       ========================================================================== */
+    .main-container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding-top: 18px;
+      padding-left: calc(16px + var(--safe-left));
+      padding-right: calc(16px + var(--safe-right));
+      padding-bottom: calc(96px + var(--safe-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Demo Banner */
+    .demo-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: var(--status-warning-soft);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .demo-banner-text {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.82rem;
+    }
+
+    .demo-banner-text strong {
+      display: block;
+      color: var(--status-warning);
+      font-size: 0.86rem;
+    }
+
+    .btn-amber {
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 12px;
+      background: #f59e0b;
+      color: #0f1715;
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+
+    /* ==========================================================================
+       5. KPI SUMMARY GRID
+       ========================================================================== */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    @media (min-width: 820px) {
+      .kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .kpi-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .kpi-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .kpi-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .kpi-value {
+      font-size: 1.42rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.15;
+    }
+
+    .kpi-sub {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ==========================================================================
+       6. ANALYTICS & INTERACTIVE CATEGORY BREAKDOWN
+       ========================================================================== */
+    .analytics-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .section-subtitle {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .analytics-body {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    @media (min-width: 720px) {
+      .analytics-body {
+        grid-template-columns: 180px 1fr;
+        gap: 22px;
+      }
+    }
+
+    .donut-wrap {
+      position: relative;
+      width: 164px;
+      height: 164px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .donut-center {
+      position: absolute;
+      text-align: center;
+      pointer-events: none;
+      max-width: 105px;
+    }
+
+    .donut-center-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+    }
+
+    .donut-center-val {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stacked-bar {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      overflow: hidden;
+      display: flex;
+      gap: 2px;
+      padding: 2px;
+      margin-bottom: 12px;
+    }
+
+    .stacked-seg {
+      height: 100%;
+      cursor: pointer;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .stacked-seg:first-child { border-top-left-radius: 999px; border-bottom-left-radius: 999px; }
+    .stacked-seg:last-child { border-top-right-radius: 999px; border-bottom-right-radius: 999px; }
+    .stacked-seg:hover { opacity: 0.85; }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 14px;
+      background: var(--bg-elevated);
+      border: 1px solid transparent;
+      text-align: left;
+      transition: border-color 0.15s ease, transform 0.12s ease;
+    }
+
+    .legend-item:hover {
+      border-color: var(--border-strong);
+    }
+
+    .legend-item.active-filter {
+      border-color: var(--accent-primary);
+      background: var(--accent-primary-soft);
+    }
+
+    .legend-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .legend-right {
+      text-align: right;
+      flex-shrink: 0;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .legend-pct {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-left: 3px;
+    }
+
+    /* ==========================================================================
+       7. VIEW SWITCHER, PILLS & FILTER TOOLBAR
+       ========================================================================== */
+    .workspace-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .segmented-control {
+      display: inline-flex;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .seg-btn {
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.16s ease;
+    }
+
+    .seg-btn.active {
+      background: var(--accent-primary);
+      color: var(--accent-on-primary);
+      box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);
+    }
+
+    .pills-scroller {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .pills-scroller::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filter-pill {
+      min-height: 38px;
+      padding: 0 13px;
+      border-radius: 999px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+
+    .filter-pill:hover {
+      border-color: var(--border-strong);
+    }
+
+    .filter-pill.active {
+      background: var(--accent-primary-soft);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary-text);
+    }
+
+    .pill-count {
+      font-size: 0.68rem;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+    }
+
+    .filter-pill.active .pill-count {
+      background: var(--accent-primary);
+      color: var(--accent-on-primary);
+    }
+
+    .search-sort-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1 1 230px;
+    }
+
+    .search-box .icon-svg {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .text-input, .select-input, .textarea-input {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.86rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .search-box .text-input {
+      padding-left: 38px;
+    }
+
+    .text-input:focus, .select-input:focus, .textarea-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px var(--accent-primary-soft);
+    }
+
+    .sort-select {
+      flex: 0 1 190px;
+    }
+
+    /* ==========================================================================
+       8. SUBSCRIPTION CARDS GRID
+       ========================================================================== */
+    .subs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    @media (min-width: 740px) {
+      .subs-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .sub-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 24px;
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      transition: transform 0.16s ease, border-color 0.16s ease;
+    }
+
+    .sub-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-strong);
+    }
+
+    .sub-card.is-paused {
+      opacity: 0.72;
+    }
+
+    .sub-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .sub-identity {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .sub-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 1.25rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+    }
+
+    .sub-title-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .sub-name {
+      font-size: 1rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-chip {
+      font-size: 0.66rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      flex-shrink: 0;
+    }
+
+    .status-active { background: var(--accent-primary-soft); color: var(--accent-primary-text); }
+    .status-trial { background: var(--accent-indigo-soft); color: var(--accent-indigo); }
+    .status-paused { background: var(--bg-elevated); color: var(--text-muted); }
+
+    .sub-meta-line {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .sub-price-box {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .sub-price {
+      font-size: 1.12rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .sub-fx-hint {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .sub-renewal-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .countdown-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 11px;
+    }
+
+    .cd-ok { background: var(--accent-primary-soft); color: var(--accent-primary-text); }
+    .cd-soon { background: var(--status-warning-soft); color: var(--status-warning); }
+    .cd-urgent { background: var(--status-danger-soft); color: var(--status-danger); }
+    .cd-paused { background: var(--bg-elevated); color: var(--text-muted); }
+
+    .renewal-date-text {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+    }
+
+    .sub-details-box {
+      padding-top: 10px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .detail-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .info-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.74rem;
+      font-weight: 500;
+      padding: 4px 9px;
+      border-radius: 10px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      max-width: 100%;
+    }
+
+    .info-chip span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .copy-chip {
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .copy-chip:hover {
+      border-color: var(--accent-primary);
+    }
+
+    .sub-notes {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .sub-card-footer {
+      padding-top: 10px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .btn-paid {
+      min-height: 40px;
+      padding: 0 13px;
+      border-radius: 12px;
+      background: var(--accent-primary-soft);
+      color: var(--accent-primary-text);
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-paid:hover {
+      background: var(--accent-primary);
+      color: var(--accent-on-primary);
+    }
+
+    .card-icon-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-ghost-icon {
+      min-width: 40px;
+      min-height: 40px;
+      border-radius: 12px;
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .btn-ghost-icon:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .btn-ghost-icon.danger:hover {
+      background: var(--status-danger-soft);
+      color: var(--status-danger);
+    }
+
+    /* ==========================================================================
+       9. RENEWAL CALENDAR VIEW
+       ========================================================================== */
+    .calendar-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 820px) {
+      .calendar-layout {
+        grid-template-columns: 1.35fr 1fr;
+        align-items: start;
+      }
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .cal-month-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+
+    .cal-nav-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .cal-cell {
+      min-height: 54px;
+      border-radius: 14px;
+      background: var(--bg-elevated);
+      border: 1px solid transparent;
+      padding: 6px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.14s ease;
+    }
+
+    .cal-cell.empty {
+      background: transparent;
+      pointer-events: none;
+    }
+
+    .cal-cell:hover:not(.empty) {
+      border-color: var(--border-strong);
+    }
+
+    .cal-cell.is-today {
+      border-color: var(--accent-indigo);
+    }
+
+    .cal-cell.is-selected {
+      background: var(--accent-primary-soft);
+      border-color: var(--accent-primary);
+    }
+
+    .cal-day-num {
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .cal-cell.is-today .cal-day-num {
+      color: var(--accent-indigo);
+    }
+
+    .cal-dots {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3px;
+      max-width: 100%;
+    }
+
+    .cal-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .cal-day-panel {
+      background: var(--bg-elevated);
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .cal-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 12px;
+    }
+
+    .cal-panel-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cal-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* ==========================================================================
+       10. FLOATING ACTION BUTTON & MODALS (BOTTOM SHEET ON MOBILE)
+       ========================================================================== */
+    .fab-add {
+      position: fixed;
+      right: calc(18px + var(--safe-right));
+      bottom: calc(20px + var(--safe-bottom));
+      z-index: 35;
+      min-height: 54px;
+      padding: 0 20px;
+      border-radius: 18px;
+      background: var(--accent-primary);
+      color: var(--accent-on-primary);
+      font-size: 0.9rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow-fab);
+      transition: transform 0.15s ease, background-color 0.15s ease;
+    }
+
+    .fab-add:hover {
+      background: var(--accent-primary-hover);
+    }
+
+    .fab-add:active {
+      transform: scale(0.95);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+
+    @media (min-width: 640px) {
+      .modal-backdrop {
+        align-items: center;
+        padding: 16px;
+      }
+    }
+
+    .modal-sheet {
+      width: 100%;
+      max-width: 580px;
+      max-height: 92vh;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 28px 28px 0 0;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding-bottom: var(--safe-bottom);
+      animation: sheetUp 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    @media (min-width: 640px) {
+      .modal-sheet {
+        border-radius: 28px;
+        padding-bottom: 0;
+      }
+    }
+
+    .modal-sheet.modal-sm {
+      max-width: 440px;
+    }
+
+    @keyframes sheetUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .modal-title {
+      font-size: 1.02rem;
+      font-weight: 800;
+    }
+
+    .modal-body {
+      padding: 18px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 520px) {
+      .form-grid-2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .form-grid-3 {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr 1.1fr;
+      gap: 10px;
+    }
+
+    .field-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .inline-link-btn {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+    }
+
+    .inline-link-btn:hover {
+      text-decoration: underline;
+    }
+
+    .picker-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .choice-chip {
+      min-width: 40px;
+      min-height: 40px;
+      padding: 0 8px;
+      border-radius: 12px;
+      background: var(--bg-elevated);
+      border: 2px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      transition: all 0.12s ease;
+    }
+
+    .choice-chip.selected {
+      border-color: var(--accent-primary);
+      background: var(--accent-primary-soft);
+      color: var(--accent-primary);
+    }
+
+    .swatch-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      transition: transform 0.12s ease;
+    }
+
+    .swatch-btn.selected {
+      border-color: var(--text-primary);
+      transform: scale(1.12);
+    }
+
+    .btn-primary {
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 14px;
+      background: var(--accent-primary);
+      color: var(--accent-on-primary);
+      font-size: 0.86rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-primary-hover);
+    }
+
+    .btn-secondary {
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 14px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-size: 0.84rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-danger {
+      min-height: 42px;
+      padding: 0 16px;
+      border-radius: 13px;
+      background: #e11d48;
+      color: #ffffff;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Category Manager List Rows */
+    .cat-manage-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 15px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .cat-manage-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .cat-badge-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* Empty State */
+    .empty-box {
+      text-align: center;
+      padding: 36px 20px;
+      border-radius: 24px;
+      background: var(--bg-card);
+      border: 1px dashed var(--border-strong);
+    }
+
+    /* Toast Notification */
+    .toast-pill {
+      position: fixed;
+      left: 50%;
+      bottom: calc(84px + var(--safe-bottom));
+      transform: translateX(-50%) translateY(10px);
+      z-index: 70;
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #10241d;
+      color: #ecfdf5;
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      box-shadow: var(--shadow-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      max-width: 92vw;
+    }
+
+    .toast-pill.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 520px) {
+      .hide-xs { display: none !important; }
+    }
+  </style>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+  <!-- ========================================================================
+       STICKY TOP HEADER
+       ======================================================================== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <div class="brand-logo" aria-hidden="true">
+          <svg class="icon-svg icon-lg" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <div style="min-width:0;">
+          <div class="brand-title-row">
+            <h1 class="brand-title">SubTrack Vault</h1>
+            <span class="offline-pill"><span class="offline-dot"></span>Offline APK</span>
+          </div>
+          <p class="brand-sub">Private subscription & account ledger</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <select id="displayCurrencySelect" class="currency-select" aria-label="Display Currency">
+          <option value="GHS">GHS (₵)</option>
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="NGN">NGN (₦)</option>
+        </select>
+
+        <button id="openCategoriesBtn" class="icon-btn" title="Manage Categories">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <span class="hide-xs">Categories</span>
+        </button>
+
+        <button id="openSettingsBtn" class="icon-btn" title="Exchange Rates & Payment Methods">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        </button>
+
+        <button id="openBackupBtn" class="icon-btn" title="Backup & CSV Export">
+          <svg class="icon-svg" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </button>
+
+        <button id="themeToggleBtn" class="icon-btn" title="Toggle Dark / Light Mode" aria-label="Toggle Theme">
+          <svg id="themeIcon" class="icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       MAIN WORKSPACE
+       ======================================================================== -->
+  <main class="main-container">
+
+    <!-- Sample Data Notice Banner -->
+    <div id="demoBanner" class="demo-banner hidden">
+      <div class="demo-banner-text">
+        <svg class="icon-svg" style="color:var(--status-warning)" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <div>
+          <strong>Sample subscriptions loaded</strong>
+          <span style="color:var(--text-secondary)">Explore categories, calendar renewals, and trials—or clear sample items anytime.</span>
+        </div>
+      </div>
+      <button id="clearDemoBtn" class="btn-amber">Clear Samples</button>
+    </div>
+
+    <!-- 4-Card Live Cashflow KPI Summary -->
+    <section class="kpi-grid" aria-label="Cashflow Summary">
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Normalized Monthly</span>
+          <span class="kpi-badge" style="background:var(--accent-primary-soft);color:var(--accent-primary);">
+            <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </span>
+        </div>
+        <div id="kpiMonthly" class="kpi-value">₵0.00</div>
+        <div class="kpi-sub">Active & trial recurring rate</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Yearly Projection</span>
+          <span class="kpi-badge" style="background:var(--accent-indigo-soft);color:var(--accent-indigo);">
+            <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </span>
+        </div>
+        <div id="kpiYearly" class="kpi-value">₵0.00</div>
+        <div class="kpi-sub">12-month annualized spend</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Due in Next 7 Days</span>
+          <span class="kpi-badge" style="background:var(--status-warning-soft);color:var(--status-warning);">
+            <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </span>
+        </div>
+        <div id="kpiDue7Amount" class="kpi-value">₵0.00</div>
+        <div id="kpiDue7Count" class="kpi-sub">0 renewals upcoming</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Active Plans</span>
+          <span class="kpi-badge" style="background:var(--status-info-soft);color:var(--status-info);">
+            <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+          </span>
+        </div>
+        <div id="kpiActiveCount" class="kpi-value">0</div>
+        <div id="kpiActiveSub" class="kpi-sub">0 trials • 0 paused</div>
+      </div>
+    </section>
+
+    <!-- Interactive Category Spend Breakdown -->
+    <section class="card" aria-label="Category Analytics">
+      <div class="analytics-header">
+        <div>
+          <h2 class="section-title">Monthly Spend by Category</h2>
+          <p class="section-subtitle">Tap any category slice or card below to filter your subscriptions</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button id="clearCatFilterChip" class="filter-pill active hidden" title="Clear category filter">
+            <span id="clearCatFilterLabel">Filtered</span>
+            <span>✕</span>
+          </button>
+          <button id="manageCatInlineBtn" class="filter-pill">
+            <span>+ Manage Categories</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="analytics-body">
+        <!-- SVG Donut Visualization -->
+        <div class="donut-wrap">
+          <svg id="categoryDonutSvg" width="164" height="164" viewBox="0 0 164 164"></svg>
+          <div class="donut-center">
+            <div class="donut-center-label">Monthly</div>
+            <div id="donutCenterTotal" class="donut-center-val">₵0.00</div>
+          </div>
+        </div>
+
+        <!-- Stacked Bar + Interactive Legend -->
+        <div>
+          <div id="categoryStackedBar" class="stacked-bar"></div>
+          <div id="categoryLegend" class="legend-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dual View Switcher & Status Pills -->
+    <section style="display:flex;flex-direction:column;gap:12px;">
+      <div class="workspace-bar">
+        <div class="segmented-control" role="tablist">
+          <button id="tabListView" class="seg-btn active" role="tab" aria-selected="true">
+            <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span>List View</span>
+          </button>
+          <button id="tabCalendarView" class="seg-btn" role="tab" aria-selected="false">
+            <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Calendar View</span>
+          </button>
+        </div>
+
+        <!-- Status Filter Pills -->
+        <div id="statusPillsBar" class="pills-scroller"></div>
+      </div>
+
+      <!-- ====================================================================
+           VIEW 1: LIST VIEW
+           ==================================================================== -->
+      <div id="listViewContainer" style="display:flex;flex-direction:column;gap:12px;">
+        <!-- Horizontal Category Filter Pills -->
+        <div id="categoryPillsBar" class="pills-scroller"></div>
+
+        <!-- Search & Sort Controls -->
+        <div class="search-sort-row">
+          <div class="search-box">
+            <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="searchInput" type="text" class="text-input" placeholder="Search service, email, phone, MoMo, notes..." />
+          </div>
+          <select id="sortSelect" class="select-input sort-select" aria-label="Sort subscriptions">
+            <option value="renewal">Sort: Next Renewal</option>
+            <option value="cost_desc">Sort: Highest Cost</option>
+            <option value="name_asc">Sort: Name (A–Z)</option>
+          </select>
+        </div>
+
+        <!-- Subscription Cards Grid -->
+        <div id="subscriptionsList" class="subs-grid"></div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="empty-box hidden">
+          <div style="width:52px;height:52px;border-radius:16px;background:var(--accent-primary-soft);color:var(--accent-primary);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+            <svg class="icon-svg icon-lg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+          </div>
+          <h3 style="font-size:1rem;font-weight:800;margin-bottom:4px;">No matching subscriptions</h3>
+          <p style="font-size:0.82rem;color:var(--text-muted);max-width:380px;margin:0 auto 16px;">
+            Add a recurring service, data bundle, cloud tool, or trial. All records stay 100% offline on your device.
+          </p>
+          <button id="emptyAddBtn" class="btn-primary">
+            <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Add Subscription</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           VIEW 2: RENEWAL CALENDAR VIEW
+           ==================================================================== -->
+      <div id="calendarViewContainer" class="card hidden">
+        <div class="calendar-layout">
+          <div>
+            <div class="cal-nav">
+              <h3 id="calMonthLabel" class="cal-month-title">November 2026</h3>
+              <div class="cal-nav-btns">
+                <button id="calPrevBtn" class="icon-btn" aria-label="Previous Month">
+                  <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button id="calTodayBtn" class="icon-btn" style="font-size:0.75rem;">Today</button>
+                <button id="calNextBtn" class="icon-btn" aria-label="Next Month">
+                  <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="cal-weekdays">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div id="calGrid" class="cal-grid"></div>
+          </div>
+
+          <!-- Selected Date Detail Panel -->
+          <div class="cal-day-panel">
+            <div class="cal-panel-header">
+              <div>
+                <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);font-weight:700;">Selected Date</div>
+                <div id="calSelectedDateTitle" style="font-size:0.96rem;font-weight:800;">—</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.7rem;color:var(--text-muted);">Daily Total</div>
+                <div id="calSelectedDateTotal" style="font-size:1rem;font-weight:800;color:var(--accent-primary);">₵0.00</div>
+              </div>
+            </div>
+            <div id="calSelectedList" class="cal-panel-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Floating Action Button -->
+  <button id="fabAddBtn" class="fab-add" aria-label="Add Subscription">
+    <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>Add Subscription</span>
+  </button>
+
+  <!-- ========================================================================
+       MODAL 1: ADD / EDIT SUBSCRIPTION
+       ======================================================================== -->
+  <div id="subModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div id="modalPreviewAvatar" class="sub-avatar" style="width:38px;height:38px;border-radius:12px;background:#10b981;font-size:1.05rem;">📺</div>
+          <div>
+            <h3 id="modalTitle" class="modal-title">Add Subscription</h3>
+            <p style="font-size:0.72rem;color:var(--text-muted);">Stored offline in local device vault</p>
+          </div>
+        </div>
+        <button id="closeSubModalBtn" class="btn-ghost-icon" aria-label="Close">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <form id="subForm" class="modal-body">
+        <input type="hidden" id="subId" />
+
+        <!-- Quick Presets -->
+        <div>
+          <div class="field-label"><span>Quick Presets</span></div>
+          <div id="presetChips" class="pills-scroller"></div>
+        </div>
+
+        <!-- Service Name & Category -->
+        <div class="form-grid-2">
+          <div>
+            <label for="subName" class="field-label"><span>Service Name *</span></label>
+            <input id="subName" type="text" class="text-input" required placeholder="e.g., Netflix, MTN Fiber, ChatGPT Plus" />
+          </div>
+          <div>
+            <label for="subCategory" class="field-label">
+              <span>Category *</span>
+              <button type="button" id="inlineNewCatBtn" class="inline-link-btn">+ New Category</button>
+            </label>
+            <select id="subCategory" class="select-input"></select>
+          </div>
+        </div>
+
+        <!-- Price, Currency & Billing Cycle -->
+        <div class="form-grid-3">
+          <div>
+            <label for="subPrice" class="field-label"><span>Price *</span></label>
+            <input id="subPrice" type="number" step="0.01" min="0" class="text-input" required placeholder="0.00" />
+          </div>
+          <div>
+            <label for="subCurrency" class="field-label"><span>Currency</span></label>
+            <select id="subCurrency" class="select-input">
+              <option value="GHS">GHS (₵)</option>
+              <option value="USD">USD ($)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+              <option value="NGN">NGN (₦)</option>
+            </select>
+          </div>
+          <div>
+            <label for="subCycle" class="field-label"><span>Billing Cycle</span></label>
+            <select id="subCycle" class="select-input">
+              <option value="Weekly">Weekly</option>
+              <option value="Bi-Weekly">Bi-Weekly</option>
+              <option value="Monthly" selected>Monthly</option>
+              <option value="Quarterly">Quarterly</option>
+              <option value="Yearly">Yearly</option>
+              <option value="Custom">Custom Days</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Conditional Custom Cycle Days -->
+        <div id="customCycleRow" class="hidden">
+          <label for="subCustomDays" class="field-label"><span>Repeat Every (Days) *</span></label>
+          <input id="subCustomDays" type="number" min="1" max="3650" value="30" class="text-input" placeholder="e.g., 14 or 45" />
+        </div>
+
+        <!-- Next Renewal Date & Status -->
+        <div class="form-grid-2">
+          <div>
+            <label for="subRenewalDate" class="field-label"><span>Next Renewal Date *</span></label>
+            <input id="subRenewalDate" type="date" class="text-input" required />
+          </div>
+          <div>
+            <label for="subStatus" class="field-label"><span>Subscription Status</span></label>
+            <select id="subStatus" class="select-input">
+              <option value="Active" selected>Active</option>
+              <option value="Free Trial">Free Trial</option>
+              <option value="Paused">Paused</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Payment Method (with inline add) & Reminder Lead Time -->
+        <div class="form-grid-2">
+          <div>
+            <label for="subPaymentMethod" class="field-label">
+              <span>Payment Method</span>
+              <button type="button" id="toggleInlinePmBtn" class="inline-link-btn">+ Add Method</button>
+            </label>
+            <select id="subPaymentMethod" class="select-input"></select>
+            <div id="inlinePmCreator" class="hidden" style="display:flex;gap:6px;margin-top:8px;">
+              <input id="inlinePmInput" type="text" class="text-input" placeholder="e.g., Visa ••8821 or AirtelTigo" />
+              <button type="button" id="saveInlinePmBtn" class="btn-primary" style="padding:0 12px;">Add</button>
+            </div>
+          </div>
+          <div>
+            <label for="subReminderDays" class="field-label"><span>Reminder Lead Time</span></label>
+            <select id="subReminderDays" class="select-input">
+              <option value="0">Same day</option>
+              <option value="1">1 day before</option>
+              <option value="3" selected>3 days before</option>
+              <option value="7">7 days before</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Account Email / Phone / Username -->
+        <div>
+          <label for="subAccount" class="field-label"><span>Account Email / Phone / Username Used</span></label>
+          <input id="subAccount" type="text" class="text-input" placeholder="e.g., alex@proton.me or 0558418747" />
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label for="subNotes" class="field-label"><span>Notes & Cancellation Steps</span></label>
+          <textarea id="subNotes" rows="2" class="textarea-input" placeholder="Plan tier, shared seats, or cancellation instructions..."></textarea>
+        </div>
+
+        <div class="modal-footer" style="padding:12px 0 0 0;">
+          <button type="button" id="cancelSubFormBtn" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Save Subscription</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 2: CUSTOM CATEGORIES MANAGER (ADD, EDIT, DELETE)
+       ======================================================================== -->
+  <div id="categoriesModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Manage Categories</h3>
+          <p style="font-size:0.72rem;color:var(--text-muted);">Create, customize, or remove subscription categories</p>
+        </div>
+        <button id="closeCatModalBtn" class="btn-ghost-icon" aria-label="Close">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Add / Edit Category Form -->
+        <form id="catForm" style="background:var(--bg-elevated);padding:14px;border-radius:18px;border:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:12px;">
+          <input type="hidden" id="editCatId" />
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <strong id="catFormHeading" style="font-size:0.84rem;">Create New Category</strong>
+            <button type="button" id="resetCatFormBtn" class="inline-link-btn hidden">Cancel Edit</button>
+          </div>
+
+          <div>
+            <label for="catNameInput" class="field-label"><span>Category Name *</span></label>
+            <input id="catNameInput" type="text" class="text-input" required placeholder="e.g., AI & Automation, Home Internet, Education" />
+          </div>
+
+          <div>
+            <div class="field-label"><span>Pick Emoji or Badge Symbol</span></div>
+            <div id="catEmojiPicker" class="picker-grid"></div>
+            <input type="hidden" id="catEmojiInput" value="🏷️" />
+          </div>
+
+          <div>
+            <div class="field-label"><span>Accent Color Swatch</span></div>
+            <div id="catColorPicker" class="picker-grid" style="align-items:center;"></div>
+            <input type="hidden" id="catColorInput" value="#10b981" />
+          </div>
+
+          <button type="submit" id="saveCatBtn" class="btn-primary">
+            <span>Add Category</span>
+          </button>
+        </form>
+
+        <!-- Existing Categories List -->
+        <div>
+          <div class="field-label"><span>Your Categories</span><span id="catTotalBadge">0</span></div>
+          <div id="categoriesManageList" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 3: SETTINGS (EXCHANGE RATES & PAYMENT METHODS)
+       ======================================================================== -->
+  <div id="settingsModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Currency Rates & Payment Methods</h3>
+          <p style="font-size:0.72rem;color:var(--text-muted);">Configure offline conversion rates and saved accounts</p>
+        </div>
+        <button id="closeSettingsModalBtn" class="btn-ghost-icon" aria-label="Close">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Configurable FX Rates relative to 1 GHS -->
+        <div>
+          <div class="field-label">
+            <span>Offline FX Rates (Value of 1 Foreign Unit in GHS ₵)</span>
+            <button type="button" id="resetFxBtn" class="inline-link-btn">Reset Defaults</button>
+          </div>
+          <div class="form-grid-2">
+            <div>
+              <label for="fxUsd" class="field-label"><span>1 USD ($) = GHS</span></label>
+              <input id="fxUsd" type="number" step="0.01" min="0.01" class="text-input" />
+            </div>
+            <div>
+              <label for="fxEur" class="field-label"><span>1 EUR (€) = GHS</span></label>
+              <input id="fxEur" type="number" step="0.01" min="0.01" class="text-input" />
+            </div>
+            <div>
+              <label for="fxGbp" class="field-label"><span>1 GBP (£) = GHS</span></label>
+              <input id="fxGbp" type="number" step="0.01" min="0.01" class="text-input" />
+            </div>
+            <div>
+              <label for="fxNgn" class="field-label"><span>1 NGN (₦) = GHS</span></label>
+              <input id="fxNgn" type="number" step="0.0001" min="0.0001" class="text-input" />
+            </div>
+          </div>
+          <button type="button" id="saveFxBtn" class="btn-primary" style="width:100%;margin-top:10px;">Save Exchange Rates</button>
+        </div>
+
+        <!-- Payment Methods Manager -->
+        <div style="border-top:1px solid var(--border-subtle);padding-top:14px;">
+          <div class="field-label"><span>Saved Payment Methods</span></div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <input id="newPmSettingsInput" type="text" class="text-input" placeholder="Add new method (e.g., PayPal, Stanbic Visa)" />
+            <button type="button" id="addPmSettingsBtn" class="btn-primary">Add</button>
+          </div>
+          <div id="paymentMethodsManageList" class="picker-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 4: DATA OWNERSHIP, BACKUPS & CSV EXPORT
+       ======================================================================== -->
+  <div id="backupModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet modal-sm">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Offline Vault & Exports</h3>
+          <p style="font-size:0.72rem;color:var(--text-muted);">100% local storage • Zero cloud sync</p>
+        </div>
+        <button id="closeBackupModalBtn" class="btn-ghost-icon" aria-label="Close">
+          <svg class="icon-svg" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size:0.8rem;color:var(--text-secondary);">
+          Export an encrypted-ready JSON backup of all your subscriptions, custom categories, payment methods, and FX rates, or download a CSV spreadsheet.
+        </p>
+
+        <button id="exportJsonBtn" class="btn-primary" style="width:100%;">
+          <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Export Full JSON Backup</span>
+        </button>
+
+        <button id="exportCsvBtn" class="btn-secondary" style="width:100%;">
+          <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+          <span>Export CSV Spreadsheet (Excel/Sheets)</span>
+        </button>
+
+        <div style="border-top:1px solid var(--border-subtle);padding-top:12px;">
+          <label for="importJsonInput" class="field-label"><span>Restore from JSON Backup</span></label>
+          <input id="importJsonInput" type="file" accept=".json,application/json" class="text-input" style="padding:8px;font-size:0.78rem;" />
+        </div>
+
+        <div style="border-top:1px solid var(--border-subtle);padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+          <button id="reloadSamplesBtn" class="btn-secondary" style="font-size:0.76rem;min-height:38px;">Load Sample Data</button>
+          <button id="wipeAllDataBtn" class="btn-danger" style="font-size:0.76rem;min-height:38px;">Reset All Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL 5: CUSTOM CONFIRMATION DIALOG (ZERO NATIVE ALERT/CONFIRM)
+       ======================================================================== -->
+  <div id="confirmModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-sheet modal-sm" style="padding:20px;gap:14px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:40px;height:40px;border-radius:13px;background:var(--status-danger-soft);color:var(--status-danger);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <h3 id="confirmTitle" class="modal-title">Confirm Action</h3>
+      </div>
+      <p id="confirmMessage" style="font-size:0.84rem;color:var(--text-secondary);"></p>
+      <div style="display:flex;justify-content:flex-end;gap:8px;">
+        <button id="confirmCancelBtn" class="btn-secondary">Cancel</button>
+        <button id="confirmProceedBtn" class="btn-danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Non-blocking Toast Pill -->
+  <div id="toastPill" class="toast-pill" role="status" aria-live="polite">
+    <svg class="icon-svg icon-sm" style="color:#34d399;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <span id="toastText">Saved</span>
+  </div>
+
+  <script>
+    /**
+     * SubTrack Vault v2 — 100% Offline APK-Ready Subscription & Recurring Account Tracker
+     * Zero external network calls. All state persists in localStorage.
+     */
+    (function () {
+      const STORAGE_KEY = 'subtrack_vault_v2_state';
+
+      // Currency Symbols & Default FX Rates relative to 1 GHS
+      const CURRENCY_SYMBOLS = {
+        GHS: '₵',
+        USD: '$',
+        EUR: '€',
+        GBP: '£',
+        NGN: '₦'
+      };
+
+      const DEFAULT_FX_TO_GHS = {
+        GHS: 1,
+        USD: 15.80,
+        EUR: 17.10,
+        GBP: 20.15,
+        NGN: 0.0102
+      };
+
+      // 8 Rich Default Categories
+      const DEFAULT_CATEGORIES = [
+        { id: 'cat-ent', name: 'Entertainment & Streaming', emoji: '🎬', color: '#f43f5e', isDefault: true },
+        { id: 'cat-cloud', name: 'Cloud & AI Tools', emoji: '🤖', color: '#10b981', isDefault: true },
+        { id: 'cat-telecom', name: 'Data & Telecom', emoji: '📡', color: '#0ea5e9', isDefault: true },
+        { id: 'cat-util', name: 'Utilities & Bills', emoji: '⚡', color: '#f59e0b', isDefault: true },
+        { id: 'cat-health', name: 'Fitness & Health', emoji: '💪', color: '#ec4899', isDefault: true },
+        { id: 'cat-gaming', name: 'Gaming', emoji: '🎮', color: '#8b5cf6', isDefault: true },
+        { id: 'cat-dev', name: 'Software & Dev', emoji: '💻', color: '#06b6d4', isDefault: true },
+        { id: 'cat-fin', name: 'Finance & Banking', emoji: '🏦', color: '#14b8a6', isDefault: true }
+      ];
+
+      const DEFAULT_PAYMENT_METHODS = [
+        'MTN MoMo',
+        'Telecel Cash',
+        'Visa / Mastercard',
+        'Virtual Card',
+        'Bank Transfer',
+        'Cash'
+      ];
+
+      const EMOJI_CHOICES = [
+        '🎬', '🤖', '📡', '⚡', '💪', '🎮', '💻', '🏦',
+        '🎵', '☁️', '🛡️', '📚', '🚗', '🏠', '☕', '🛒', '✈️', '🏷️'
+      ];
+
+      const COLOR_CHOICES = [
+        '#10b981', '#f43f5e', '#0ea5e9', '#f59e0b',
+        '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6',
+        '#6366f1', '#f97316', '#84cc16', '#e11d48'
+      ];
+
+      const QUICK_PRESETS = [
+        { name: 'Netflix Standard', categoryId: 'cat-ent', price: 130, currency: 'GHS', cycle: 'Monthly', status: 'Active' },
+        { name: 'ChatGPT Plus', categoryId: 'cat-cloud', price: 20, currency: 'USD', cycle: 'Monthly', status: 'Active' },
+        { name: 'MTN Data Bundle', categoryId: 'cat-telecom', price: 150, currency: 'GHS', cycle: 'Monthly', status: 'Active' },
+        { name: 'Spotify Duo', categoryId: 'cat-ent', price: 55, currency: 'GHS', cycle: 'Monthly', status: 'Active' },
+        { name: 'iCloud+ 200GB', categoryId: 'cat-cloud', price: 2.99, currency: 'USD', cycle: 'Monthly', status: 'Active' },
+        { name: 'YouTube Premium Trial', categoryId: 'cat-ent', price: 45, currency: 'GHS', cycle: 'Monthly', status: 'Free Trial' }
+      ];
+
+      // Date Helpers (Local timezone safe YYYY-MM-DD)
+      function toLocalDateStr(dateObj) {
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+
+      function parseLocalDate(dateStr) {
+        const [y, m, d] = (dateStr || '').split('-').map(Number);
+        const dt = new Date(y || 2026, (m || 1) - 1, d || 1);
+        dt.setHours(0, 0, 0, 0);
+        return dt;
+      }
+
+      function offsetDateStr(days) {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() + days);
+        return toLocalDateStr(d);
+      }
+
+      function formatReadableDate(dateStr) {
+        const dt = parseLocalDate(dateStr);
+        return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+
+      function getDaysUntil(dateStr) {
+        const target = parseLocalDate(dateStr);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return Math.round((target.getTime() - today.getTime()) / 86400000);
+      }
+
+      function advanceDateByCycle(dateStr, cycle, customDays = 30) {
+        const dt = parseLocalDate(dateStr);
+        switch (cycle) {
+          case 'Weekly':
+            dt.setDate(dt.getDate() + 7);
+            break;
+          case 'Bi-Weekly':
+            dt.setDate(dt.getDate() + 14);
+            break;
+          case 'Monthly':
+            dt.setMonth(dt.getMonth() + 1);
+            break;
+          case 'Quarterly':
+            dt.setMonth(dt.getMonth() + 3);
+            break;
+          case 'Yearly':
+            dt.setFullYear(dt.getFullYear() + 1);
+            break;
+          case 'Custom':
+            dt.setDate(dt.getDate() + Math.max(1, Number(customDays) || 30));
+            break;
+          default:
+            dt.setMonth(dt.getMonth() + 1);
+        }
+        return toLocalDateStr(dt);
+      }
+
+      // Sample Subscriptions
+      function createSampleSubscriptions() {
+        return [
+          {
+            id: 'sample-1',
+            isSample: true,
+            name: 'Netflix Standard',
+            price: 130.00,
+            currency: 'GHS',
+            cycle: 'Monthly',
+            customDays: 30,
+            renewalDate: offsetDateStr(1),
+            categoryId: 'cat-ent',
+            paymentMethod: 'Virtual Card',
+            account: 'alex.mensah@proton.me',
+            status: 'Active',
+            reminderDays: 3,
+            notes: '1080p HD plan • Cancel 24h before billing cycle.',
+            history: []
+          },
+          {
+            id: 'sample-2',
+            isSample: true,
+            name: 'ChatGPT Plus',
+            price: 20.00,
+            currency: 'USD',
+            cycle: 'Monthly',
+            customDays: 30,
+            renewalDate: offsetDateStr(5),
+            categoryId: 'cat-cloud',
+            paymentMethod: 'Visa / Mastercard',
+            account: 'dev.workspace@tuta.io',
+            status: 'Active',
+            reminderDays: 3,
+            notes: 'AI coding & research workspace subscription.',
+            history: []
+          },
+          {
+            id: 'sample-3',
+            isSample: true,
+            name: 'MTN Monthly Data Bundle',
+            price: 150.00,
+            currency: 'GHS',
+            cycle: 'Monthly',
+            customDays: 30,
+            renewalDate: offsetDateStr(9),
+            categoryId: 'cat-telecom',
+            paymentMethod: 'MTN MoMo',
+            account: '0558418747',
+            status: 'Active',
+            reminderDays: 1,
+            notes: 'Non-expiry main bundle + midnight bonus.',
+            history: []
+          },
+          {
+            id: 'sample-4',
+            isSample: true,
+            name: 'Proton Drive 500GB Trial',
+            price: 9.99,
+            currency: 'EUR',
+            cycle: 'Monthly',
+            customDays: 30,
+            renewalDate: offsetDateStr(3),
+            categoryId: 'cat-cloud',
+            paymentMethod: 'Virtual Card',
+            account: 'vault.backup@proton.me',
+            status: 'Free Trial',
+            reminderDays: 3,
+            notes: 'Decide whether to keep or downgrade before trial ends.',
+            history: []
+          }
+        ];
+      }
+
+      // Application State
+      let state = {
+        theme: 'dark',
+        displayCurrency: 'GHS',
+        fxToGHS: { ...DEFAULT_FX_TO_GHS },
+        categories: [...DEFAULT_CATEGORIES],
+        paymentMethods: [...DEFAULT_PAYMENT_METHODS],
+        subscriptions: []
+      };
+
+      // Ephemeral UI Filter / View State
+      let ui = {
+        activeView: 'list', // 'list' | 'calendar'
+        selectedCategoryId: 'ALL',
+        selectedStatus: 'ALL', // 'ALL' | 'Active' | 'Free Trial' | 'DUE_SOON' | 'Paused'
+        calYear: new Date().getFullYear(),
+        calMonth: new Date().getMonth(),
+        calSelectedDate: toLocalDateStr(new Date()),
+        pendingConfirm: null
+      };
+
+      // Load & Save State with Try/Catch Error Boundaries
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            state.theme = parsed.theme || 'dark';
+            state.displayCurrency = parsed.displayCurrency || 'GHS';
+            state.fxToGHS = { ...DEFAULT_FX_TO_GHS, ...(parsed.fxToGHS || {}) };
+            state.categories = Array.isArray(parsed.categories) && parsed.categories.length > 0
+              ? parsed.categories
+              : [...DEFAULT_CATEGORIES];
+            state.paymentMethods = Array.isArray(parsed.paymentMethods) && parsed.paymentMethods.length > 0
+              ? parsed.paymentMethods
+              : [...DEFAULT_PAYMENT_METHODS];
+            state.subscriptions = Array.isArray(parsed.subscriptions) ? parsed.subscriptions : [];
+          } else {
+            state.subscriptions = createSampleSubscriptions();
+            saveState();
+          }
+        } catch (err) {
+          console.error('Vault load error:', err);
+          state.subscriptions = createSampleSubscriptions();
+        }
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (err) {
+          showToast('Storage quota warning — export a JSON backup!');
+        }
+      }
+
+      // Currency Math
+      function convertAmount(amount, fromCurr, toCurr) {
+        const fromRate = Number(state.fxToGHS[fromCurr]) || 1;
+        const toRate = Number(state.fxToGHS[toCurr]) || 1;
+        const inGHS = (Number(amount) || 0) * fromRate;
+        return inGHS / toRate;
+      }
+
+      function formatMoney(amount, currencyCode) {
+        const sym = CURRENCY_SYMBOLS[currencyCode] || '₵';
+        return `${sym}${Number(amount || 0).toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}`;
+      }
+
+      function getNormalizedMonthly(sub) {
+        const p = Number(sub.price) || 0;
+        switch (sub.cycle) {
+          case 'Weekly': return p * (52 / 12);
+          case 'Bi-Weekly': return p * (26 / 12);
+          case 'Monthly': return p;
+          case 'Quarterly': return p / 3;
+          case 'Yearly': return p / 12;
+          case 'Custom': {
+            const days = Math.max(1, Number(sub.customDays) || 30);
+            return p * (30.4375 / days);
+          }
+          default: return p;
+        }
+      }
+
+      function getCategoryById(id) {
+        return state.categories.find(c => c.id === id) || state.categories[0] || {
+          id: 'cat-fallback',
+          name: 'General',
+          emoji: '🏷️',
+          color: '#10b981'
+        };
+      }
+
+      function escapeHTML(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      // Apply Theme
+      function applyTheme() {
+        const isDark = state.theme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
+        const icon = document.getElementById('themeIcon');
+        if (isDark) {
+          icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+        } else {
+          icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+        }
+      }
+
+      // Copy text to clipboard (APK & iFrame safe using execCommand fallback)
+      function copyToClipboard(text, label = 'Copied') {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showToast(`${label}: ${text}`);
+        } catch (err) {
+          showToast('Unable to copy');
+        }
+        document.body.removeChild(ta);
+      }
+
+      // Toast Notification
+      let toastTimer = null;
+      function showToast(msg) {
+        const pill = document.getElementById('toastPill');
+        document.getElementById('toastText').textContent = msg;
+        pill.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => pill.classList.remove('show'), 2500);
+      }
+
+      // ========================================================================
+      // RENDERING ENGINE
+      // ========================================================================
+      function renderAll() {
+        document.getElementById('displayCurrencySelect').value = state.displayCurrency;
+
+        // Sample banner visibility
+        const hasSamples = state.subscriptions.some(s => s.isSample);
+        document.getElementById('demoBanner').classList.toggle('hidden', !hasSamples);
+
+        renderKPIsAndAnalytics();
+        renderStatusPills();
+        renderCategoryPills();
+
+        if (ui.activeView === 'list') {
+          document.getElementById('listViewContainer').classList.remove('hidden');
+          document.getElementById('calendarViewContainer').classList.add('hidden');
+          renderSubscriptionsList();
+        } else {
+          document.getElementById('listViewContainer').classList.add('hidden');
+          document.getElementById('calendarViewContainer').classList.remove('hidden');
+          renderCalendarView();
+        }
+      }
+
+      function renderKPIsAndAnalytics() {
+        const disp = state.displayCurrency;
+        let monthlyTotal = 0;
+        let due7Total = 0;
+        let due7Count = 0;
+        let activeCount = 0;
+        let trialCount = 0;
+        let pausedCount = 0;
+
+        const catTotals = {};
+        state.categories.forEach(c => { catTotals[c.id] = 0; });
+
+        state.subscriptions.forEach(sub => {
+          if (sub.status === 'Paused') {
+            pausedCount++;
+            return;
+          }
+          if (sub.status === 'Free Trial') trialCount++;
+          else activeCount++;
+
+          const normMonthly = convertAmount(getNormalizedMonthly(sub), sub.currency, disp);
+          monthlyTotal += normMonthly;
+
+          if (catTotals[sub.categoryId] !== undefined) {
+            catTotals[sub.categoryId] += normMonthly;
+          } else {
+            const fallbackId = state.categories[0]?.id;
+            if (fallbackId) catTotals[fallbackId] = (catTotals[fallbackId] || 0) + normMonthly;
+          }
+
+          const days = getDaysUntil(sub.renewalDate);
+          if (days <= 7) {
+            due7Count++;
+            due7Total += convertAmount(sub.price, sub.currency, disp);
+          }
+        });
+
+        document.getElementById('kpiMonthly').textContent = formatMoney(monthlyTotal, disp);
+        document.getElementById('kpiYearly').textContent = formatMoney(monthlyTotal * 12, disp);
+        document.getElementById('kpiDue7Amount').textContent = formatMoney(due7Total, disp);
+        document.getElementById('kpiDue7Count').textContent = `${due7Count} renewal${due7Count === 1 ? '' : 's'} due ≤7d`;
+        document.getElementById('kpiActiveCount').textContent = activeCount + trialCount;
+        document.getElementById('kpiActiveSub').textContent = `${trialCount} trial${trialCount === 1 ? '' : 's'} • ${pausedCount} paused`;
+        document.getElementById('donutCenterTotal').textContent = formatMoney(monthlyTotal, disp);
+
+        // Update clear category filter chip
+        const clearChip = document.getElementById('clearCatFilterChip');
+        if (ui.selectedCategoryId !== 'ALL') {
+          const cat = getCategoryById(ui.selectedCategoryId);
+          document.getElementById('clearCatFilterLabel').textContent = `${cat.emoji} ${cat.name}`;
+          clearChip.classList.remove('hidden');
+        } else {
+          clearChip.classList.add('hidden');
+        }
+
+        renderDonutAndLegend(catTotals, monthlyTotal, disp);
+      }
+
+      function renderDonutAndLegend(catTotals, monthlyTotal, disp) {
+        const svg = document.getElementById('categoryDonutSvg');
+        const bar = document.getElementById('categoryStackedBar');
+        const legend = document.getElementById('categoryLegend');
+        svg.innerHTML = '';
+        bar.innerHTML = '';
+        legend.innerHTML = '';
+
+        const items = state.categories
+          .map(c => ({ ...c, val: catTotals[c.id] || 0 }))
+          .filter(c => c.val > 0)
+          .sort((a, b) => b.val - a.val);
+
+        const cx = 82, cy = 82, r = 62, strokeW = 20;
+        const circumference = 2 * Math.PI * r;
+
+        if (items.length === 0 || monthlyTotal <= 0) {
+          const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          bgCircle.setAttribute('cx', cx);
+          bgCircle.setAttribute('cy', cy);
+          bgCircle.setAttribute('r', r);
+          bgCircle.setAttribute('fill', 'none');
+          bgCircle.setAttribute('stroke', 'var(--bg-elevated)');
+          bgCircle.setAttribute('stroke-width', strokeW);
+          svg.appendChild(bgCircle);
+
+          legend.innerHTML = '<p style="font-size:0.78rem;color:var(--text-muted);">Add active subscriptions to visualize category cashflow.</p>';
+          return;
+        }
+
+        let cumulativePct = 0;
+        items.forEach(item => {
+          const pct = item.val / monthlyTotal;
+          const dash = Math.max(2, pct * circumference - 2);
+          const offset = -cumulativePct * circumference;
+          cumulativePct += pct;
+
+          // SVG Donut Arc
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', cx);
+          circle.setAttribute('cy', cy);
+          circle.setAttribute('r', r);
+          circle.setAttribute('fill', 'none');
+          circle.setAttribute('stroke', item.color);
+          circle.setAttribute('stroke-width', ui.selectedCategoryId === item.id ? strokeW + 4 : strokeW);
+          circle.setAttribute('stroke-dasharray', `${dash} ${circumference}`);
+          circle.setAttribute('stroke-dashoffset', offset);
+          circle.setAttribute('transform', `rotate(-90 ${cx} ${cy})`);
+          circle.style.cursor = 'pointer';
+          circle.style.transition = 'stroke-width 0.15s ease';
+          circle.addEventListener('click', () => toggleCategoryFilter(item.id));
+          svg.appendChild(circle);
+
+          // Stacked Bar Segment
+          const seg = document.createElement('div');
+          seg.className = 'stacked-seg';
+          seg.style.width = `${Math.max(3, pct * 100)}%`;
+          seg.style.backgroundColor = item.color;
+          seg.title = `${item.name}: ${formatMoney(item.val, disp)}`;
+          seg.addEventListener('click', () => toggleCategoryFilter(item.id));
+          bar.appendChild(seg);
+
+          // Legend Card
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `legend-item ${ui.selectedCategoryId === item.id ? 'active-filter' : ''}`;
+          btn.innerHTML = `
+            <div class="legend-left">
+              <span class="legend-dot" style="background:${escapeHTML(item.color)}"></span>
+              <span class="legend-name">${escapeHTML(item.emoji)} ${escapeHTML(item.name)}</span>
+            </div>
+            <div class="legend-right">
+              ${formatMoney(item.val, disp)}<span class="legend-pct">${Math.round(pct * 100)}%</span>
+            </div>
+          `;
+          btn.addEventListener('click', () => toggleCategoryFilter(item.id));
+          legend.appendChild(btn);
+        });
+      }
+
+      function toggleCategoryFilter(catId) {
+        ui.selectedCategoryId = ui.selectedCategoryId === catId ? 'ALL' : catId;
+        if (ui.activeView !== 'list') ui.activeView = 'list';
+        renderAll();
+      }
+
+      function renderStatusPills() {
+        const container = document.getElementById('statusPillsBar');
+        container.innerHTML = '';
+
+        const counts = {
+          ALL: state.subscriptions.length,
+          Active: state.subscriptions.filter(s => s.status === 'Active').length,
+          'Free Trial': state.subscriptions.filter(s => s.status === 'Free Trial').length,
+          DUE_SOON: state.subscriptions.filter(s => s.status !== 'Paused' && getDaysUntil(s.renewalDate) <= 7).length,
+          Paused: state.subscriptions.filter(s => s.status === 'Paused').length
+        };
+
+        const defs = [
+          { key: 'ALL', label: 'All' },
+          { key: 'Active', label: 'Active' },
+          { key: 'Free Trial', label: 'Free Trials' },
+          { key: 'DUE_SOON', label: 'Due Soon (≤7d)' },
+          { key: 'Paused', label: 'Paused' }
+        ];
+
+        defs.forEach(d => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `filter-pill ${ui.selectedStatus === d.key ? 'active' : ''}`;
+          btn.innerHTML = `<span>${d.label}</span><span class="pill-count">${counts[d.key]}</span>`;
+          btn.addEventListener('click', () => {
+            ui.selectedStatus = d.key;
+            renderAll();
+          });
+          container.appendChild(btn);
+        });
+      }
+
+      function renderCategoryPills() {
+        const container = document.getElementById('categoryPillsBar');
+        container.innerHTML = '';
+
+        const allBtn = document.createElement('button');
+        allBtn.type = 'button';
+        allBtn.className = `filter-pill ${ui.selectedCategoryId === 'ALL' ? 'active' : ''}`;
+        allBtn.innerHTML = `<span>All Categories</span><span class="pill-count">${state.subscriptions.length}</span>`;
+        allBtn.addEventListener('click', () => {
+          ui.selectedCategoryId = 'ALL';
+          renderAll();
+        });
+        container.appendChild(allBtn);
+
+        state.categories.forEach(cat => {
+          const count = state.subscriptions.filter(s => s.categoryId === cat.id).length;
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `filter-pill ${ui.selectedCategoryId === cat.id ? 'active' : ''}`;
+          btn.innerHTML = `<span>${escapeHTML(cat.emoji)} ${escapeHTML(cat.name)}</span><span class="pill-count">${count}</span>`;
+          btn.addEventListener('click', () => {
+            ui.selectedCategoryId = ui.selectedCategoryId === cat.id ? 'ALL' : cat.id;
+            renderAll();
+          });
+          container.appendChild(btn);
+        });
+      }
+
+      function renderSubscriptionsList() {
+        const listEl = document.getElementById('subscriptionsList');
+        const emptyEl = document.getElementById('emptyState');
+        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        const sortBy = document.getElementById('sortSelect').value;
+
+        let filtered = state.subscriptions.filter(sub => {
+          if (ui.selectedCategoryId !== 'ALL' && sub.categoryId !== ui.selectedCategoryId) return false;
+          if (ui.selectedStatus === 'DUE_SOON') {
+            if (sub.status === 'Paused' || getDaysUntil(sub.renewalDate) > 7) return false;
+          } else if (ui.selectedStatus !== 'ALL' && sub.status !== ui.selectedStatus) {
+            return false;
+          }
+          if (query) {
+            const cat = getCategoryById(sub.categoryId);
+            const hay = `${sub.name} ${cat.name} ${sub.paymentMethod} ${sub.account} ${sub.notes}`.toLowerCase();
+            if (!hay.includes(query)) return false;
+          }
+          return true;
+        });
+
+        filtered.sort((a, b) => {
+          if (sortBy === 'renewal') {
+            return getDaysUntil(a.renewalDate) - getDaysUntil(b.renewalDate);
+          } else if (sortBy === 'cost_desc') {
+            const aVal = convertAmount(getNormalizedMonthly(a), a.currency, 'GHS');
+            const bVal = convertAmount(getNormalizedMonthly(b), b.currency, 'GHS');
+            return bVal - aVal;
+          }
+          return a.name.localeCompare(b.name);
+        });
+
+        listEl.innerHTML = '';
+        if (filtered.length === 0) {
+          emptyEl.classList.remove('hidden');
+          return;
+        }
+        emptyEl.classList.add('hidden');
+
+        filtered.forEach(sub => {
+          const cat = getCategoryById(sub.categoryId);
+          const days = getDaysUntil(sub.renewalDate);
+          const lead = Number(sub.reminderDays ?? 3);
+          const isTrial = sub.status === 'Free Trial';
+          const isPaused = sub.status === 'Paused';
+
+          let cdLabel = isTrial ? `Trial ends in ${days}d` : `In ${days} days`;
+          let cdClass = 'cd-ok';
+
+          if (isPaused) {
+            cdLabel = 'Billing Paused';
+            cdClass = 'cd-paused';
+          } else if (days < 0) {
+            cdLabel = `${isTrial ? 'Trial ended' : 'Overdue'} ${Math.abs(days)}d ago`;
+            cdClass = 'cd-urgent';
+          } else if (days === 0) {
+            cdLabel = isTrial ? 'Trial Ends Today' : 'Due Today';
+            cdClass = 'cd-urgent';
+          } else if (days === 1) {
+            cdLabel = isTrial ? 'Trial Ends Tomorrow' : 'Due Tomorrow';
+            cdClass = 'cd-soon';
+          } else if (days <= lead) {
+            cdLabel = isTrial ? `Trial Ends in ${days}d` : `Due in ${days} days`;
+            cdClass = 'cd-soon';
+          }
+
+          const statusClass = sub.status === 'Free Trial' ? 'status-trial' : (isPaused ? 'status-paused' : 'status-active');
+          const cycleText = sub.cycle === 'Custom' ? `Every ${sub.customDays || 30}d` : sub.cycle;
+          const fxHint = sub.currency !== state.displayCurrency
+            ? `<div class="sub-fx-hint">≈ ${formatMoney(convertAmount(sub.price, sub.currency, state.displayCurrency), state.displayCurrency)}</div>`
+            : '';
+
+          const card = document.createElement('article');
+          card.className = `sub-card ${isPaused ? 'is-paused' : ''}`;
+          card.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="sub-card-top">
+                <div class="sub-identity">
+                  <div class="sub-avatar" style="background:${escapeHTML(cat.color)}">${escapeHTML(cat.emoji)}</div>
+                  <div style="min-width:0;">
+                    <div class="sub-title-line">
+                      <h3 class="sub-name">${escapeHTML(sub.name)}</h3>
+                      <span class="status-chip ${statusClass}">${escapeHTML(sub.status)}</span>
+                    </div>
+                    <div class="sub-meta-line">${escapeHTML(cat.name)} • ${escapeHTML(cycleText)}</div>
+                  </div>
+                </div>
+
+                <div class="sub-price-box">
+                  <div class="sub-price">${formatMoney(sub.price, sub.currency)}</div>
+                  ${fxHint}
+                </div>
+              </div>
+
+              <div class="sub-renewal-row">
+                <span class="countdown-pill ${cdClass}">
+                  <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>${cdLabel}</span>
+                </span>
+                <span class="renewal-date-text">Next: <strong>${formatReadableDate(sub.renewalDate)}</strong></span>
+              </div>
+
+              <div class="sub-details-box">
+                <div class="detail-pills">
+                  ${sub.paymentMethod ? `
+                    <span class="info-chip">
+                      <svg class="icon-svg icon-sm" style="color:var(--accent-primary)" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                      <span>${escapeHTML(sub.paymentMethod)}</span>
+                    </span>` : ''}
+                  ${sub.account ? `
+                    <button type="button" class="info-chip copy-chip" data-copy="${escapeHTML(sub.account)}" title="Tap to copy account identifier">
+                      <svg class="icon-svg icon-sm" style="color:var(--status-info)" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <span>${escapeHTML(sub.account)}</span>
+                    </button>` : ''}
+                </div>
+                ${sub.notes ? `<p class="sub-notes">${escapeHTML(sub.notes)}</p>` : ''}
+              </div>
+            </div>
+
+            <div class="sub-card-footer">
+              <button type="button" class="btn-paid" data-action="paid" data-id="${escapeHTML(sub.id)}">
+                <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Mark Paid</span>
+              </button>
+
+              <div class="card-icon-actions">
+                <button type="button" class="btn-ghost-icon" data-action="edit" data-id="${escapeHTML(sub.id)}" title="Edit">
+                  <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button type="button" class="btn-ghost-icon danger" data-action="delete" data-id="${escapeHTML(sub.id)}" title="Delete">
+                  <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </div>
+            </div>
+          `;
+          listEl.appendChild(card);
+        });
+      }
+
+      // ========================================================================
+      // RENEWAL CALENDAR VIEW & RECURRING DATE PROJECTION
+      // ========================================================================
+      function getMonthEventsMap(year, month) {
+        const map = {};
+        const monthStart = new Date(year, month, 1);
+        const monthEnd = new Date(year, month + 1, 0);
+
+        state.subscriptions.forEach(sub => {
+          if (sub.status === 'Paused') return;
+          if (ui.selectedStatus === 'Free Trial' && sub.status !== 'Free Trial') return;
+          if (ui.selectedStatus === 'Active' && sub.status !== 'Active') return;
+
+          let cursor = parseLocalDate(sub.renewalDate);
+          let guard = 0;
+
+          // Project forward into viewed month if renewalDate is earlier
+          while (cursor < monthStart && guard < 120) {
+            const nextStr = advanceDateByCycle(toLocalDateStr(cursor), sub.cycle, sub.customDays);
+            cursor = parseLocalDate(nextStr);
+            guard++;
+          }
+
+          // Collect all occurrences inside [monthStart, monthEnd]
+          while (cursor <= monthEnd && guard < 160) {
+            const key = toLocalDateStr(cursor);
+            if (!map[key]) map[key] = [];
+            map[key].push(sub);
+            const nextStr = advanceDateByCycle(key, sub.cycle, sub.customDays);
+            cursor = parseLocalDate(nextStr);
+            guard++;
+          }
+        });
+
+        return map;
+      }
+
+      function renderCalendarView() {
+        const year = ui.calYear;
+        const month = ui.calMonth;
+        const monthDate = new Date(year, month, 1);
+        document.getElementById('calMonthLabel').textContent = monthDate.toLocaleDateString(undefined, {
+          month: 'long',
+          year: 'numeric'
+        });
+
+        const firstDayWeekday = monthDate.getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const todayStr = toLocalDateStr(new Date());
+        const eventsMap = getMonthEventsMap(year, month);
+
+        const grid = document.getElementById('calGrid');
+        grid.innerHTML = '';
+
+        // Leading blank cells
+        for (let i = 0; i < firstDayWeekday; i++) {
+          const blank = document.createElement('div');
+          blank.className = 'cal-cell empty';
+          grid.appendChild(blank);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dStr = toLocalDateStr(new Date(year, month, day));
+          const daySubs = eventsMap[dStr] || [];
+          const cell = document.createElement('button');
+          cell.type = 'button';
+          cell.className = `cal-cell ${dStr === todayStr ? 'is-today' : ''} ${dStr === ui.calSelectedDate ? 'is-selected' : ''}`;
+
+          const dotsHtml = daySubs.slice(0, 4).map(s => {
+            const cat = getCategoryById(s.categoryId);
+            return `<span class="cal-dot" style="background:${escapeHTML(cat.color)}"></span>`;
+          }).join('');
+
+          cell.innerHTML = `
+            <span class="cal-day-num">${day}</span>
+            <div class="cal-dots">${dotsHtml}</div>
+          `;
+          cell.addEventListener('click', () => {
+            ui.calSelectedDate = dStr;
+            renderCalendarView();
+          });
+          grid.appendChild(cell);
+        }
+
+        // Render Selected Day Detail Panel
+        const selectedSubs = eventsMap[ui.calSelectedDate] || [];
+        document.getElementById('calSelectedDateTitle').textContent = formatReadableDate(ui.calSelectedDate);
+
+        let dailyTotal = 0;
+        selectedSubs.forEach(s => {
+          dailyTotal += convertAmount(s.price, s.currency, state.displayCurrency);
+        });
+        document.getElementById('calSelectedDateTotal').textContent = formatMoney(dailyTotal, state.displayCurrency);
+
+        const listEl = document.getElementById('calSelectedList');
+        listEl.innerHTML = '';
+
+        if (selectedSubs.length === 0) {
+          listEl.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);padding:12px 0;">No renewals scheduled on this date.</p>';
+          return;
+        }
+
+        selectedSubs.forEach(sub => {
+          const cat = getCategoryById(sub.categoryId);
+          const row = document.createElement('div');
+          row.className = 'cal-item-row';
+          row.innerHTML = `
+            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+              <div class="cat-badge-icon" style="background:${escapeHTML(cat.color)}">${escapeHTML(cat.emoji)}</div>
+              <div style="min-width:0;">
+                <div style="font-size:0.86rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(sub.name)}</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">${escapeHTML(sub.status)} • ${escapeHTML(sub.paymentMethod || cat.name)}</div>
+              </div>
+            </div>
+            <div style="font-size:0.9rem;font-weight:800;flex-shrink:0;">${formatMoney(sub.price, sub.currency)}</div>
+          `;
+          listEl.appendChild(row);
+        });
+      }
+
+      // ========================================================================
+      // MODALS: SUBSCRIPTION FORM, CATEGORIES MANAGER, SETTINGS, BACKUP
+      // ========================================================================
+      function populateSubFormDropdowns(selectedCatId = null, selectedPm = null) {
+        const catSel = document.getElementById('subCategory');
+        catSel.innerHTML = state.categories.map(c =>
+          `<option value="${escapeHTML(c.id)}">${escapeHTML(c.emoji)} ${escapeHTML(c.name)}</option>`
+        ).join('');
+        if (selectedCatId && state.categories.some(c => c.id === selectedCatId)) {
+          catSel.value = selectedCatId;
+        }
+
+        const pmSel = document.getElementById('subPaymentMethod');
+        pmSel.innerHTML = state.paymentMethods.map(pm =>
+          `<option value="${escapeHTML(pm)}">${escapeHTML(pm)}</option>`
+        ).join('');
+        if (selectedPm && state.paymentMethods.includes(selectedPm)) {
+          pmSel.value = selectedPm;
+        }
+        updateSubModalPreview();
+      }
+
+      function updateSubModalPreview() {
+        const cat = getCategoryById(document.getElementById('subCategory').value);
+        const av = document.getElementById('modalPreviewAvatar');
+        av.style.background = cat.color;
+        av.textContent = cat.emoji;
+      }
+
+      function openSubModal(sub = null) {
+        const form = document.getElementById('subForm');
+        form.reset();
+        document.getElementById('inlinePmCreator').classList.add('hidden');
+
+        if (sub) {
+          document.getElementById('modalTitle').textContent = 'Edit Subscription';
+          document.getElementById('subId').value = sub.id;
+          document.getElementById('subName').value = sub.name;
+          document.getElementById('subPrice').value = sub.price;
+          document.getElementById('subCurrency').value = sub.currency;
+          document.getElementById('subCycle').value = sub.cycle;
+          document.getElementById('subCustomDays').value = sub.customDays || 30;
+          document.getElementById('subRenewalDate').value = sub.renewalDate;
+          document.getElementById('subStatus').value = sub.status || 'Active';
+          document.getElementById('subReminderDays').value = String(sub.reminderDays ?? 3);
+          document.getElementById('subAccount').value = sub.account || '';
+          document.getElementById('subNotes').value = sub.notes || '';
+          if (sub.paymentMethod && !state.paymentMethods.includes(sub.paymentMethod)) {
+            state.paymentMethods.push(sub.paymentMethod);
+          }
+          populateSubFormDropdowns(sub.categoryId, sub.paymentMethod);
+        } else {
+          document.getElementById('modalTitle').textContent = 'Add Subscription';
+          document.getElementById('subId').value = '';
+          document.getElementById('subCurrency').value = state.displayCurrency;
+          document.getElementById('subRenewalDate').value = offsetDateStr(7);
+          document.getElementById('subStatus').value = 'Active';
+          populateSubFormDropdowns(state.categories[0]?.id, state.paymentMethods[0]);
+        }
+
+        document.getElementById('customCycleRow').classList.toggle(
+          'hidden',
+          document.getElementById('subCycle').value !== 'Custom'
+        );
+
+        document.getElementById('subModal').classList.remove('hidden');
+      }
+
+      function closeSubModal() {
+        document.getElementById('subModal').classList.add('hidden');
+      }
+
+      // Categories Manager Modal
+      function openCategoriesModal() {
+        resetCategoryForm();
+        renderCategoriesManageList();
+        document.getElementById('categoriesModal').classList.remove('hidden');
+      }
+
+      function closeCategoriesModal() {
+        document.getElementById('categoriesModal').classList.add('hidden');
+      }
+
+      function resetCategoryForm() {
+        document.getElementById('editCatId').value = '';
+        document.getElementById('catNameInput').value = '';
+        document.getElementById('catFormHeading').textContent = 'Create New Category';
+        document.getElementById('saveCatBtn').querySelector('span').textContent = 'Add Category';
+        document.getElementById('resetCatFormBtn').classList.add('hidden');
+        selectCatEmoji('🏷️');
+        selectCatColor('#10b981');
+      }
+
+      function selectCatEmoji(emoji) {
+        document.getElementById('catEmojiInput').value = emoji;
+        document.querySelectorAll('[data-cat-emoji]').forEach(el => {
+          el.classList.toggle('selected', el.dataset.catEmoji === emoji);
+        });
+      }
+
+      function selectCatColor(hex) {
+        document.getElementById('catColorInput').value = hex;
+        document.querySelectorAll('[data-cat-color]').forEach(el => {
+          el.classList.toggle('selected', el.dataset.catColor === hex);
+        });
+      }
+
+      function renderCategoriesManageList() {
+        const list = document.getElementById('categoriesManageList');
+        document.getElementById('catTotalBadge').textContent = `${state.categories.length} total`;
+        list.innerHTML = '';
+
+        state.categories.forEach(cat => {
+          const usage = state.subscriptions.filter(s => s.categoryId === cat.id).length;
+          const row = document.createElement('div');
+          row.className = 'cat-manage-row';
+          row.innerHTML = `
+            <div class="cat-manage-left">
+              <div class="cat-badge-icon" style="background:${escapeHTML(cat.color)}">${escapeHTML(cat.emoji)}</div>
+              <div style="min-width:0;">
+                <div style="font-size:0.86rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHTML(cat.name)}</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">${usage} subscription${usage === 1 ? '' : 's'}</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <button type="button" class="btn-ghost-icon" data-cat-edit="${escapeHTML(cat.id)}" title="Edit Category">
+                <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              ${state.categories.length > 1 ? `
+                <button type="button" class="btn-ghost-icon danger" data-cat-del="${escapeHTML(cat.id)}" title="Delete Category">
+                  <svg class="icon-svg icon-sm" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>` : ''}
+            </div>
+          `;
+          list.appendChild(row);
+        });
+      }
+
+      // Settings Modal (FX Rates & Payment Methods)
+      function openSettingsModal() {
+        document.getElementById('fxUsd').value = state.fxToGHS.USD;
+        document.getElementById('fxEur').value = state.fxToGHS.EUR;
+        document.getElementById('fxGbp').value = state.fxToGHS.GBP;
+        document.getElementById('fxNgn').value = state.fxToGHS.NGN;
+        renderPaymentMethodsManageList();
+        document.getElementById('settingsModal').classList.remove('hidden');
+      }
+
+      function renderPaymentMethodsManageList() {
+        const wrap = document.getElementById('paymentMethodsManageList');
+        wrap.innerHTML = '';
+        state.paymentMethods.forEach(pm => {
+          const chip = document.createElement('div');
+          chip.className = 'filter-pill';
+          chip.innerHTML = `
+            <span>${escapeHTML(pm)}</span>
+            ${state.paymentMethods.length > 1 ? `<button type="button" data-del-pm="${escapeHTML(pm)}" style="color:var(--status-danger);font-weight:800;margin-left:4px;">✕</button>` : ''}
+          `;
+          wrap.appendChild(chip);
+        });
+      }
+
+      // Custom Confirm Modal
+      function openConfirm(title, message, onProceed) {
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMessage').textContent = message;
+        ui.pendingConfirm = onProceed;
+        document.getElementById('confirmModal').classList.remove('hidden');
+      }
+
+      function closeConfirm() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        ui.pendingConfirm = null;
+      }
+
+      // ========================================================================
+      // INITIALIZE PICKERS & EVENT LISTENERS
+      // ========================================================================
+      function initPickers() {
+        // Quick Presets in Sub Modal
+        const presetWrap = document.getElementById('presetChips');
+        QUICK_PRESETS.forEach(p => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'filter-pill';
+          btn.textContent = p.name;
+          btn.addEventListener('click', () => {
+            document.getElementById('subName').value = p.name;
+            document.getElementById('subPrice').value = p.price;
+            document.getElementById('subCurrency').value = p.currency;
+            document.getElementById('subCycle').value = p.cycle;
+            document.getElementById('subStatus').value = p.status;
+            document.getElementById('customCycleRow').classList.add('hidden');
+            if (state.categories.some(c => c.id === p.categoryId)) {
+              document.getElementById('subCategory').value = p.categoryId;
+              updateSubModalPreview();
+            }
+          });
+          presetWrap.appendChild(btn);
+        });
+
+        // Emoji Picker in Categories Modal
+        const emojiWrap = document.getElementById('catEmojiPicker');
+        EMOJI_CHOICES.forEach(em => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'choice-chip';
+          btn.dataset.catEmoji = em;
+          btn.textContent = em;
+          btn.addEventListener('click', () => selectCatEmoji(em));
+          emojiWrap.appendChild(btn);
+        });
+
+        // Color Picker in Categories Modal
+        const colorWrap = document.getElementById('catColorPicker');
+        COLOR_CHOICES.forEach(hex => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'swatch-btn';
+          btn.dataset.catColor = hex;
+          btn.style.backgroundColor = hex;
+          btn.addEventListener('click', () => selectCatColor(hex));
+          colorWrap.appendChild(btn);
+        });
+      }
+
+      function bindEvents() {
+        // Header Controls
+        document.getElementById('displayCurrencySelect').addEventListener('change', e => {
+          state.displayCurrency = e.target.value;
+          saveState();
+          renderAll();
+        });
+
+        document.getElementById('themeToggleBtn').addEventListener('click', () => {
+          state.theme = state.theme === 'dark' ? 'light' : 'dark';
+          applyTheme();
+          saveState();
+        });
+
+        document.getElementById('openCategoriesBtn').addEventListener('click', openCategoriesModal);
+        document.getElementById('manageCatInlineBtn').addEventListener('click', openCategoriesModal);
+        document.getElementById('closeCatModalBtn').addEventListener('click', closeCategoriesModal);
+
+        document.getElementById('openSettingsBtn').addEventListener('click', openSettingsModal);
+        document.getElementById('closeSettingsModalBtn').addEventListener('click', () => {
+          document.getElementById('settingsModal').classList.add('hidden');
+        });
+
+        document.getElementById('openBackupBtn').addEventListener('click', () => {
+          document.getElementById('backupModal').classList.remove('hidden');
+        });
+        document.getElementById('closeBackupModalBtn').addEventListener('click', () => {
+          document.getElementById('backupModal').classList.add('hidden');
+        });
+
+        // Clear Demo Banner
+        document.getElementById('clearDemoBtn').addEventListener('click', () => {
+          state.subscriptions = state.subscriptions.filter(s => !s.isSample);
+          saveState();
+          renderAll();
+          showToast('Sample subscriptions removed');
+        });
+
+        // Clear Category Filter Chip
+        document.getElementById('clearCatFilterChip').addEventListener('click', () => {
+          ui.selectedCategoryId = 'ALL';
+          renderAll();
+        });
+
+        // View Switcher Tabs
+        document.getElementById('tabListView').addEventListener('click', () => {
+          ui.activeView = 'list';
+          document.getElementById('tabListView').classList.add('active');
+          document.getElementById('tabCalendarView').classList.remove('active');
+          renderAll();
+        });
+
+        document.getElementById('tabCalendarView').addEventListener('click', () => {
+          ui.activeView = 'calendar';
+          document.getElementById('tabCalendarView').classList.add('active');
+          document.getElementById('tabListView').classList.remove('active');
+          renderAll();
+        });
+
+        // Search & Sort
+        document.getElementById('searchInput').addEventListener('input', renderSubscriptionsList);
+        document.getElementById('sortSelect').addEventListener('change', renderSubscriptionsList);
+
+        // Calendar Navigation
+        document.getElementById('calPrevBtn').addEventListener('click', () => {
+          ui.calMonth--;
+          if (ui.calMonth < 0) { ui.calMonth = 11; ui.calYear--; }
+          renderCalendarView();
+        });
+        document.getElementById('calNextBtn').addEventListener('click', () => {
+          ui.calMonth++;
+          if (ui.calMonth > 11) { ui.calMonth = 0; ui.calYear++; }
+          renderCalendarView();
+        });
+        document.getElementById('calTodayBtn').addEventListener('click', () => {
+          const now = new Date();
+          ui.calYear = now.getFullYear();
+          ui.calMonth = now.getMonth();
+          ui.calSelectedDate = toLocalDateStr(now);
+          renderCalendarView();
+        });
+
+        // Add Subscription Modal Triggers
+        document.getElementById('fabAddBtn').addEventListener('click', () => openSubModal(null));
+        document.getElementById('emptyAddBtn').addEventListener('click', () => openSubModal(null));
+        document.getElementById('closeSubModalBtn').addEventListener('click', closeSubModal);
+        document.getElementById('cancelSubFormBtn').addEventListener('click', closeSubModal);
+
+        document.getElementById('subCategory').addEventListener('change', updateSubModalPreview);
+        document.getElementById('subCycle').addEventListener('change', e => {
+          document.getElementById('customCycleRow').classList.toggle('hidden', e.target.value !== 'Custom');
+        });
+
+        // Inline "+ New Category" inside Sub Modal
+        document.getElementById('inlineNewCatBtn').addEventListener('click', () => {
+          openCategoriesModal();
+        });
+
+        // Inline "+ Add Method" inside Sub Modal
+        document.getElementById('toggleInlinePmBtn').addEventListener('click', () => {
+          const box = document.getElementById('inlinePmCreator');
+          box.classList.toggle('hidden');
+          if (!box.classList.contains('hidden')) {
+            document.getElementById('inlinePmInput').focus();
+          }
+        });
+
+        document.getElementById('saveInlinePmBtn').addEventListener('click', () => {
+          const val = document.getElementById('inlinePmInput').value.trim();
+          if (!val) return;
+          if (!state.paymentMethods.includes(val)) {
+            state.paymentMethods.push(val);
+            saveState();
+          }
+          populateSubFormDropdowns(document.getElementById('subCategory').value, val);
+          document.getElementById('inlinePmInput').value = '';
+          document.getElementById('inlinePmCreator').classList.add('hidden');
+          showToast(`Added payment method: ${val}`);
+        });
+
+        // Save Subscription Form
+        document.getElementById('subForm').addEventListener('submit', e => {
+          e.preventDefault();
+          const id = document.getElementById('subId').value;
+          const existing = id ? state.subscriptions.find(s => s.id === id) : null;
+
+          const payload = {
+            id: id || `sub-${Date.now()}`,
+            isSample: false,
+            name: document.getElementById('subName').value.trim(),
+            categoryId: document.getElementById('subCategory').value,
+            price: parseFloat(document.getElementById('subPrice').value) || 0,
+            currency: document.getElementById('subCurrency').value,
+            cycle: document.getElementById('subCycle').value,
+            customDays: Math.max(1, parseInt(document.getElementById('subCustomDays').value, 10) || 30),
+            renewalDate: document.getElementById('subRenewalDate').value,
+            status: document.getElementById('subStatus').value,
+            reminderDays: parseInt(document.getElementById('subReminderDays').value, 10) || 0,
+            paymentMethod: document.getElementById('subPaymentMethod').value,
+            account: document.getElementById('subAccount').value.trim(),
+            notes: document.getElementById('subNotes').value.trim(),
+            history: existing?.history || []
+          };
+
+          if (existing) {
+            const idx = state.subscriptions.findIndex(s => s.id === id);
+            state.subscriptions[idx] = payload;
+            showToast('Subscription updated');
+          } else {
+            state.subscriptions.push(payload);
+            showToast('Subscription saved to vault');
+          }
+
+          saveState();
+          closeSubModal();
+          renderAll();
+        });
+
+        // Subscription Card Actions (Copy Account, Mark Paid, Edit, Delete)
+        document.getElementById('subscriptionsList').addEventListener('click', e => {
+          const copyBtn = e.target.closest('[data-copy]');
+          if (copyBtn) {
+            copyToClipboard(copyBtn.dataset.copy, 'Copied login');
+            return;
+          }
+
+          const actionBtn = e.target.closest('[data-action]');
+          if (!actionBtn) return;
+
+          const id = actionBtn.dataset.id;
+          const action = actionBtn.dataset.action;
+          const sub = state.subscriptions.find(s => s.id === id);
+          if (!sub) return;
+
+          if (action === 'paid') {
+            sub.history = sub.history || [];
+            sub.history.push({
+              paidOn: toLocalDateStr(new Date()),
+              amount: sub.price,
+              currency: sub.currency
+            });
+            if (sub.status === 'Free Trial') {
+              sub.status = 'Active';
+            }
+            sub.renewalDate = advanceDateByCycle(sub.renewalDate, sub.cycle, sub.customDays);
+            saveState();
+            renderAll();
+            showToast(`Paid! Next renewal: ${formatReadableDate(sub.renewalDate)}`);
+          } else if (action === 'edit') {
+            openSubModal(sub);
+          } else if (action === 'delete') {
+            openConfirm(
+              `Delete ${sub.name}?`,
+              'This subscription record will be permanently removed from your offline vault.',
+              () => {
+                state.subscriptions = state.subscriptions.filter(s => s.id !== id);
+                saveState();
+                renderAll();
+                showToast('Subscription deleted');
+              }
+            );
+          }
+        });
+
+        // Category Form Submit (Add or Edit Category)
+        document.getElementById('catForm').addEventListener('submit', e => {
+          e.preventDefault();
+          const editId = document.getElementById('editCatId').value;
+          const name = document.getElementById('catNameInput').value.trim();
+          const emoji = document.getElementById('catEmojiInput').value || '🏷️';
+          const color = document.getElementById('catColorInput').value || '#10b981';
+          if (!name) return;
+
+          if (editId) {
+            const cat = state.categories.find(c => c.id === editId);
+            if (cat) {
+              cat.name = name;
+              cat.emoji = emoji;
+              cat.color = color;
+            }
+            showToast('Category updated');
+          } else {
+            const newCat = {
+              id: `cat-${Date.now()}`,
+              name,
+              emoji,
+              color,
+              isDefault: false
+            };
+            state.categories.push(newCat);
+            // If Sub Modal is open behind it, pre-select the newly created category
+            if (!document.getElementById('subModal').classList.contains('hidden')) {
+              populateSubFormDropdowns(newCat.id, document.getElementById('subPaymentMethod').value);
+            }
+            showToast(`Category "${name}" added`);
+          }
+
+          saveState();
+          resetCategoryForm();
+          renderCategoriesManageList();
+          renderAll();
+        });
+
+        document.getElementById('resetCatFormBtn').addEventListener('click', resetCategoryForm);
+
+        // Categories Manage List Actions (Edit / Delete)
+        document.getElementById('categoriesManageList').addEventListener('click', e => {
+          const editBtn = e.target.closest('[data-cat-edit]');
+          if (editBtn) {
+            const cat = state.categories.find(c => c.id === editBtn.dataset.catEdit);
+            if (!cat) return;
+            document.getElementById('editCatId').value = cat.id;
+            document.getElementById('catNameInput').value = cat.name;
+            document.getElementById('catFormHeading').textContent = 'Edit Category';
+            document.getElementById('saveCatBtn').querySelector('span').textContent = 'Update Category';
+            document.getElementById('resetCatFormBtn').classList.remove('hidden');
+            selectCatEmoji(cat.emoji);
+            selectCatColor(cat.color);
+            return;
+          }
+
+          const delBtn = e.target.closest('[data-cat-del]');
+          if (delBtn) {
+            const delId = delBtn.dataset.catDel;
+            const cat = state.categories.find(c => c.id === delId);
+            if (!cat || state.categories.length <= 1) return;
+
+            openConfirm(
+              `Delete "${cat.name}"?`,
+              'Any subscriptions in this category will be safely reassigned to your first remaining category.',
+              () => {
+                state.categories = state.categories.filter(c => c.id !== delId);
+                const fallbackId = state.categories[0].id;
+                state.subscriptions.forEach(s => {
+                  if (s.categoryId === delId) s.categoryId = fallbackId;
+                });
+                if (ui.selectedCategoryId === delId) ui.selectedCategoryId = 'ALL';
+                saveState();
+                renderCategoriesManageList();
+                renderAll();
+                showToast('Category removed');
+              }
+            );
+          }
+        });
+
+        // Settings Modal: FX Rates & Payment Methods
+        document.getElementById('saveFxBtn').addEventListener('click', () => {
+          state.fxToGHS.USD = Math.max(0.01, parseFloat(document.getElementById('fxUsd').value) || DEFAULT_FX_TO_GHS.USD);
+          state.fxToGHS.EUR = Math.max(0.01, parseFloat(document.getElementById('fxEur').value) || DEFAULT_FX_TO_GHS.EUR);
+          state.fxToGHS.GBP = Math.max(0.01, parseFloat(document.getElementById('fxGbp').value) || DEFAULT_FX_TO_GHS.GBP);
+          state.fxToGHS.NGN = Math.max(0.0001, parseFloat(document.getElementById('fxNgn').value) || DEFAULT_FX_TO_GHS.NGN);
+          saveState();
+          renderAll();
+          showToast('Exchange rates updated');
+        });
+
+        document.getElementById('resetFxBtn').addEventListener('click', () => {
+          state.fxToGHS = { ...DEFAULT_FX_TO_GHS };
+          document.getElementById('fxUsd').value = state.fxToGHS.USD;
+          document.getElementById('fxEur').value = state.fxToGHS.EUR;
+          document.getElementById('fxGbp').value = state.fxToGHS.GBP;
+          document.getElementById('fxNgn').value = state.fxToGHS.NGN;
+          saveState();
+          renderAll();
+          showToast('FX rates reset to defaults');
+        });
+
+        document.getElementById('addPmSettingsBtn').addEventListener('click', () => {
+          const inp = document.getElementById('newPmSettingsInput');
+          const val = inp.value.trim();
+          if (!val) return;
+          if (!state.paymentMethods.includes(val)) {
+            state.paymentMethods.push(val);
+            saveState();
+            renderPaymentMethodsManageList();
+            showToast(`Added "${val}"`);
+          }
+          inp.value = '';
+        });
+
+        document.getElementById('paymentMethodsManageList').addEventListener('click', e => {
+          const delBtn = e.target.closest('[data-del-pm]');
+          if (!delBtn || state.paymentMethods.length <= 1) return;
+          const pm = delBtn.dataset.delPm;
+          state.paymentMethods = state.paymentMethods.filter(m => m !== pm);
+          saveState();
+          renderPaymentMethodsManageList();
+          showToast(`Removed "${pm}"`);
+        });
+
+        // Backup Modal: JSON Export, CSV Export, JSON Import, Sample Reload, Wipe
+        document.getElementById('exportJsonBtn').addEventListener('click', () => {
+          const payload = {
+            app: 'SubTrack Vault',
+            version: 2,
+            exportedAt: new Date().toISOString(),
+            state
+          };
+          downloadFile(
+            JSON.stringify(payload, null, 2),
+            `subtrack-vault-${toLocalDateStr(new Date())}.json`,
+            'application/json'
+          );
+          showToast('JSON backup exported');
+        });
+
+        document.getElementById('exportCsvBtn').addEventListener('click', () => {
+          const headers = [
+            'Service Name', 'Status', 'Category', 'Price', 'Currency',
+            'Billing Cycle', 'Next Renewal Date', 'Payment Method',
+            'Account Identifier', 'Normalized Monthly (' + state.displayCurrency + ')', 'Notes'
+          ];
+          const rows = state.subscriptions.map(s => {
+            const cat = getCategoryById(s.categoryId);
+            const norm = convertAmount(getNormalizedMonthly(s), s.currency, state.displayCurrency).toFixed(2);
+            const cycleLabel = s.cycle === 'Custom' ? `Every ${s.customDays} days` : s.cycle;
+            return [
+              s.name, s.status, cat.name, s.price, s.currency,
+              cycleLabel, s.renewalDate, s.paymentMethod,
+              s.account, norm, s.notes
+            ].map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',');
+          });
+
+          const csvContent = [headers.join(','), ...rows].join('\r\n');
+          downloadFile(
+            csvContent,
+            `subtrack-vault-${toLocalDateStr(new Date())}.csv`,
+            'text/csv;charset=utf-8;'
+          );
+          showToast('CSV spreadsheet exported');
+        });
+
+        document.getElementById('importJsonInput').addEventListener('change', e => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = evt => {
+            try {
+              const parsed = JSON.parse(evt.target.result);
+              const incoming = parsed.state || parsed;
+              if (!Array.isArray(incoming.subscriptions)) {
+                throw new Error('Invalid backup structure');
+              }
+              if (Array.isArray(incoming.categories) && incoming.categories.length > 0) {
+                state.categories = incoming.categories;
+              }
+              if (Array.isArray(incoming.paymentMethods) && incoming.paymentMethods.length > 0) {
+                state.paymentMethods = incoming.paymentMethods;
+              }
+              if (incoming.fxToGHS) {
+                state.fxToGHS = { ...DEFAULT_FX_TO_GHS, ...incoming.fxToGHS };
+              }
+              if (incoming.displayCurrency) {
+                state.displayCurrency = incoming.displayCurrency;
+              }
+              state.subscriptions = incoming.subscriptions;
+              saveState();
+              renderAll();
+              document.getElementById('backupModal').classList.add('hidden');
+              showToast(`Restored ${state.subscriptions.length} subscriptions`);
+            } catch (err) {
+              showToast('Invalid JSON backup file');
+            } finally {
+              e.target.value = '';
+            }
+          };
+          reader.readAsText(file);
+        });
+
+        document.getElementById('reloadSamplesBtn').addEventListener('click', () => {
+          const nonSamples = state.subscriptions.filter(s => !s.isSample);
+          state.subscriptions = [...nonSamples, ...createSampleSubscriptions()];
+          saveState();
+          renderAll();
+          document.getElementById('backupModal').classList.add('hidden');
+          showToast('Sample subscriptions loaded');
+        });
+
+        document.getElementById('wipeAllDataBtn').addEventListener('click', () => {
+          openConfirm(
+            'Reset All Vault Data?',
+            'This will delete every subscription and reset categories, payment methods, and FX rates to defaults.',
+            () => {
+              state.categories = [...DEFAULT_CATEGORIES];
+              state.paymentMethods = [...DEFAULT_PAYMENT_METHODS];
+              state.fxToGHS = { ...DEFAULT_FX_TO_GHS };
+              state.subscriptions = [];
+              ui.selectedCategoryId = 'ALL';
+              ui.selectedStatus = 'ALL';
+              saveState();
+              renderAll();
+              document.getElementById('backupModal').classList.add('hidden');
+              showToast('Vault completely reset');
+            }
+          );
+        });
+
+        // Confirm Dialog Controls
+        document.getElementById('confirmCancelBtn').addEventListener('click', closeConfirm);
+        document.getElementById('confirmProceedBtn').addEventListener('click', () => {
+          if (typeof ui.pendingConfirm === 'function') ui.pendingConfirm();
+          closeConfirm();
+        });
+      }
+
+      function downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // Bootstrap Application
+      loadState();
+      applyTheme();
+      initPickers();
+      bindEvents();
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
