@@ -1,6 +1,6 @@
 {
-  "name": "SubTrack Vault",
-  "short_name": "SubTrack",
+  "name": CadiVault",
+  "short_name": "CadiVault",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0b1120",
