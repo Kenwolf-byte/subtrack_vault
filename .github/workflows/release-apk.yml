@@ -1,0 +1,111 @@
+name: Build and Release CadiVault APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag (e.g., v4.0.1)'
+        required: true
+        default: 'v4.0.1'
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout web source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Determine release tag and version
+        id: meta
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ github.event.inputs.version }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          VER="${TAG#v}"
+          CODE=$(echo "$VER" | awk -F. '{print ($1 * 10000) + ($2 * 100) + $3}')
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VER" >> $GITHUB_OUTPUT
+          echo "code=$CODE" >> $GITHUB_OUTPUT
+
+      - name: Scaffold Capacitor 8 Android project
+        run: |
+          mkdir -p build_app/www
+          cp index.html manifest.json build_app/www/
+          cd build_app
+          npm init -y
+          npm install @capacitor/core@^8.6.2 @capacitor/cli@^8.6.2 @capacitor/android@^8.6.2 @capacitor/app@^8.1.2 @capacitor/filesystem@^8.1.5 @capacitor/local-notifications@^8.3.1 @capacitor/share@^8.0.3
+          npx cap init "CadiVault" "com.kenwolf.subtrackvault" --web-dir www
+          npx cap add android
+          npx cap sync android
+
+      - name: Configure permissions, version, and signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd build_app
+          echo "$KEYSTORE_BASE64" | base64 -d > android/cadivault-release.jks
+
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />\n</manifest>|' android/app/src/main/AndroidManifest.xml
+
+          sed -i "s/versionCode 1/versionCode ${{ steps.meta.outputs.code }}/" android/app/build.gradle
+          sed -i 's/versionName "1.0"/versionName "${{ steps.meta.outputs.version }}"/' android/app/build.gradle
+
+          cat << 'GRADLE' >> android/app/build.gradle
+
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file("../cadivault-release.jks")
+                      storePassword System.getenv("KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("KEY_ALIAS")
+                      keyPassword System.getenv("KEY_PASSWORD")
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }
+          GRADLE
+
+      - name: Build signed Release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd build_app/android
+          ./gradlew assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk ../../CadiVault-${{ steps.meta.outputs.tag }}.apk
+
+      - name: Publish GitHub Release with APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: CadiVault ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          files: CadiVault-${{ steps.meta.outputs.tag }}.apk
