@@ -1,8 +1,8 @@
 {
-  "name": CadiVault",
+  "name": "CadiVault",
   "short_name": "CadiVault",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0b1120",
+  "background_color": "#0b0f0e",
   "theme_color": "#10b981"
 }
